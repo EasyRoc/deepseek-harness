@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/llm/llm-openai-compatible/README.md
+/:
+  en: be60504535677ee9
+  zh: 2eb7b594cc5490c6
+/deepseek-ai-dsh-llm-openai-compatible:
+  en: 5b81be496b215da7
+  zh: af822c20782d8bba
+/deepseek-ai-dsh-llm-openai-compatible/summary:
+  en: 144f6453fd44f580
+  zh: 7871554e026e21b4
+/deepseek-ai-dsh-llm-openai-compatible/table-of-contents:
+  en: e6747830a09a09aa
+  zh: d9fe211fb6d215d0
+/deepseek-ai-dsh-llm-openai-compatible/use-this-package:
+  en: 2d9eb2ba7edc9bab
+  zh: afa74741e40cb97f
+/deepseek-ai-dsh-llm-openai-compatible/understand-the-implementation:
+  en: a700b1c0091c67de
+  zh: 5dea8d255bcb1681
+/deepseek-ai-dsh-llm-openai-compatible/further-exploration:
+  en: 962b59b00828c4e8
+  zh: 2588fd646f02b947
+/deepseek-ai-dsh-llm-openai-compatible/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-llm-openai-compatible/model-experience/openai-chat-completions-request-projection:
+  en: 5cf49158c6a8261e
+  zh: 0e633f301ff10b51
+/deepseek-ai-dsh-llm-openai-compatible/model-experience/openai-chat-completions-request-projection/what-the-model-sees:
+  en: a5b3eac8114439fe
+  zh: 60a85d202e773ba0
+/deepseek-ai-dsh-llm-openai-compatible/model-experience/openai-chat-completions-request-projection/token-effect:
+  en: 885c7893e1d377ff
+  zh: ff487ad56636840a
+/deepseek-ai-dsh-llm-openai-compatible/model-experience/openai-chat-completions-request-projection/kv-cache-effect:
+  en: ac7d1b03dfccdc3c
+  zh: 713520880980da4f
+/deepseek-ai-dsh-llm-openai-compatible/known-limitations-and-deferred-work:
+  en: 595823cf3e2e5e21
+  zh: 8b344bc4adada765
+/deepseek-ai-dsh-llm-openai-compatible/known-limitations-and-deferred-work/dev-note:
+  en: 8995ca1ad1cbe57f
+  zh: bd1831b8b0461a1a

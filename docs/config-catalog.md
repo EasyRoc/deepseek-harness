@@ -1595,6 +1595,56 @@ export interface Config extends ProtocolConfig {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-deepseek-api-key -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-openai-compatible -->
+<a id="deepseek-aidsh-llm-openai-compatible"></a>
+
+## `@deepseek-ai/dsh-llm-openai-compatible`
+
+- `inject`: `llm`
+- `refs`: [`RetryPolicyConfig`](../packages/llm/llm/src/index.ts) · `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/llm/llm-openai-compatible/src/config.ts:13`](../packages/llm/llm-openai-compatible/src/config.ts)
+
+```ts config-catalog
+/** Plugin configuration for one OpenAI-compatible provider route. */
+export interface Config {
+  /** Registered provider route id; distinct ids allow several gateways in one composition. */
+  provider: Volatile<string>
+  /** Human-readable provider name shown in selectors. */
+  displayName: Volatile<string>
+  /**
+   * Chat-completions root including any version path. Absence keeps the
+   * plugin mounted but inert — the dormant-row composition state — so an
+   * unconfigured row is composition, not misconfiguration.
+   */
+  baseURL: Volatile<string | undefined>
+  /** Credential reference resolved per request; defaults to OPENAI_COMPATIBLE_API_KEY. */
+  apiKeyEnv: Volatile<string>
+  /** Advisory models shown by discovery consumers; defaults to no static catalog. */
+  models: Volatile<OpenAICompatCatalogModel[]>
+  /** Default per-request output cap (default 8,192); an explicit request value wins. */
+  maxTokens: Volatile<number>
+  /** Positive context capacity used when the selected model has no exact value (default 128,000). */
+  defaultContextWindow: Volatile<number>
+  /** Maximum provider idle time while one stream read is outstanding (default five minutes). */
+  streamIdleTimeoutMs: Volatile<number>
+  /** Provider-owned model-request retry policy; omission uses normal mode with five retries. */
+  retryPolicy: Volatile<RetryPolicyConfig | undefined>
+}
+
+/** One optional model entry advertised for the gateway. */
+export interface OpenAICompatCatalogModel {
+  /** Wire model id accepted by the configured endpoint. */
+  id: string
+  /** Selector label; defaults to {@link id}. */
+  name?: string
+  /** Optional selector detail for deployments with similar model variants. */
+  description?: string
+  /** Known combined request/response context capacity in tokens. */
+  contextWindow?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-openai-compatible -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-llm-pi-ai -->
 <a id="deepseek-aidsh-llm-pi-ai"></a>
 

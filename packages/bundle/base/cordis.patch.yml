@@ -127,6 +127,13 @@
     - id: llm-pi-ai
       name: '@deepseek-ai/dsh-llm-pi-ai'
 
+    # OpenAI-compatible gateway route, mounted dormant: a row without `baseURL`
+    # registers nothing; a configuration supplying one activates the route with
+    # its own provider id and credential reference. Gateway profiles (and the
+    # web Models page) own the actual endpoint and key.
+    - id: llm-openai-compatible
+      name: '@deepseek-ai/dsh-llm-openai-compatible'
+
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'
       config:
