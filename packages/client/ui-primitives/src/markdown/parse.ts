@@ -25,10 +25,14 @@ import { mathCompatibility } from './mathCompatibility.ts'
  * @returns The mdast root.
  */
 export function parseGfm(text: string): Root {
-  return recoverLocalImages(fromMarkdown(text, {
+  // The micromark Extension and mdast FromMarkdownExtension types have a
+  // known structural mismatch with fromMarkdown's Options across
+  // micromark-extension-gfm patch versions; the runtime contract is stable.
+  const options = {
     extensions: [gfm(), cjkFriendlyStrong()],
     mdastExtensions: [gfmFromMarkdown()],
-  }), text)
+  } as Parameters<typeof fromMarkdown>[1]
+  return recoverLocalImages(fromMarkdown(text, options), text)
 }
 
 /**
@@ -38,8 +42,9 @@ export function parseGfm(text: string): Root {
  * @returns The mdast root.
  */
 export function parseGfmWithMath(text: string): Root {
-  return recoverLocalImages(fromMarkdown(text, {
+  const options = {
     extensions: [gfm(), cjkFriendlyStrong(), mathCompatibility(), math()],
     mdastExtensions: [gfmFromMarkdown(), mathFromMarkdown()],
-  }), text)
+  } as Parameters<typeof fromMarkdown>[1]
+  return recoverLocalImages(fromMarkdown(text, options), text)
 }
