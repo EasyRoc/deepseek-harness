@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-account-moldex/README.md
+/:
+  en: 24a072391f292eea
+  zh: 3f08b2b1d9f7776b
+/deepseek-ai-dsh-client-ui-account-moldex:
+  en: 734085ec2965dbbc
+  zh: 1fc4aa48b8532053
+/deepseek-ai-dsh-client-ui-account-moldex/summary:
+  en: 8753bdec560a664e
+  zh: 5d13e6c4d6fbd4b9
+/deepseek-ai-dsh-client-ui-account-moldex/table-of-contents:
+  en: e6747830a09a09aa
+  zh: 0dc5a6c4171f3d38
+/deepseek-ai-dsh-client-ui-account-moldex/use-this-package:
+  en: 5e47eaaa7396a5e0
+  zh: b1ab893282c044da
+/deepseek-ai-dsh-client-ui-account-moldex/understand-the-implementation:
+  en: 1d257d74806210af
+  zh: fb7dfff366e38fa1
+/deepseek-ai-dsh-client-ui-account-moldex/further-exploration:
+  en: 79f543d42ebf11c8
+  zh: e6c4aeea27b573a1
+/deepseek-ai-dsh-client-ui-account-moldex/model-experience:
+  en: 9c9ea92ee089c1c0
+  zh: 7130cec2525d0647
+/deepseek-ai-dsh-client-ui-account-moldex/model-experience/kv-cache-effect:
+  en: ca3015e252db0114
+  zh: ee5d25c033e93b2a
+/deepseek-ai-dsh-client-ui-account-moldex/known-limitations-and-deferred-work:
+  en: d2ac8b6d743e0aae
+  zh: 591bc140bd5b80ca

@@ -136,6 +136,8 @@
     # reports an actionable error when its settings-domain provider is absent.
     - id: ui-settings-account
       name: '@deepseek-ai/dsh-client-ui-settings-account'
+    - id: ui-account-moldex
+      name: '@deepseek-ai/dsh-client-ui-account-moldex'
 
     - id: account-controller
       name: '@deepseek-ai/dsh-api-account-controller'

@@ -1,0 +1,26 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsw-space-2, 0.5rem);
+  max-width: 22rem;
+}
+
+.title {
+  font-weight: var(--dsw-font-weight-medium, 500);
+}
+
+.label {
+  font-size: var(--dsw-font-size-sm, 0.8125rem);
+}
+
+.input {
+  padding: var(--dsw-space-1, 0.25rem) var(--dsw-space-2, 0.5rem);
+}
+
+.error {
+  color: var(--dsw-color-danger, #b3261e);
+}
+
+.link {
+  align-self: flex-start;
+}
