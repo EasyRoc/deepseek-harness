@@ -108,6 +108,14 @@ const GROUP_ORDER = [
 
 const SERVICE_ROLES: ServiceRole[] = [
   {
+    key: 'moldexAccountGateway',
+    pkg: 'moldex-account',
+    title: 'Moldex sign-in submission and key management',
+    mode: 'core',
+    consumers: ['ui-account-moldex'],
+    note: 'Carries the sign-in form submission and tenant key creation once per attempt; credentials never return to the Client.',
+  },
+  {
     key: 'hmr',
     pkg: 'hmr',
     title: 'Serialized module and configuration reloads',

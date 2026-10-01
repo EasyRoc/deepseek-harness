@@ -366,6 +366,35 @@ abstract getDeviceIdentity(): Promise<{ deviceId?: string; userId?: AccountUserI
 
 Source: [`packages/credentials/deepseek-account/src/index.ts`](../../packages/credentials/deepseek-account/src/index.ts)
 
+<a id="ctxmoldexaccountgateway--moldexaccountgateway"></a>
+
+### `ctx.moldexAccountGateway` — `MoldexAccountGateway`
+
+Dedicated Remote namespace for the Moldex sign-in form and key management.
+
+Form submissions cross this namespace exactly once per attempt; the account namespace stays free of credentials, and no password or key value is ever returned to the Client after submission.
+
+```ts cordis-catalog
+/** Submit the sign-in form for the active attempt.
+ * @param input - account identifier and password; consumed once, never stored.
+ * @returns the state after the attempt commits or fails.
+ */
+@Remote submitCredentials(input: MoldexSignInInput): Promise<AccountView>
+
+/** Create one tenant API key and store its plaintext under the configured reference.
+ * @param name - human-readable key label; defaults to `DSH Desktop`.
+ * @returns the created key facts for display.
+ */
+@Remote createAndStoreApiKey(name?: string): Promise<MoldexApiKeySelection>
+
+/** List the account's tenant API keys for display.
+ * @returns key entries in server order.
+ */
+@Remote listApiKeys(): Promise<MoldexApiKeyList>
+```
+
+Source: [`packages/credentials/moldex-account/src/index.ts`](../../packages/credentials/moldex-account/src/index.ts)
+
 <a id="authorization-events"></a>
 
 ### `authorization/*` events
