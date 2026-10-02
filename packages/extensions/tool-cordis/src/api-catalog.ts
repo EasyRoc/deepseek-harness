@@ -1517,6 +1517,31 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'moldexAccountGateway',
+    summary: 'Dedicated Remote namespace for the Moldex sign-in form and key management.',
+    description: 'Dedicated Remote namespace for the Moldex sign-in form and key management.\n\nForm submissions cross this namespace exactly once per attempt; the account namespace stays free of credentials, and no password or key value is ever returned to the Client after submission.',
+    methods: [
+      {
+        signature: '@Remote submitCredentials(input: MoldexSignInInput): Promise<AccountView>',
+        description: 'Submit the sign-in form for the active attempt.',
+        parameters: [{ name: 'input', description: 'account identifier and password; consumed once, never stored.' }],
+        returns: 'the state after the attempt commits or fails.',
+      },
+      {
+        signature: '@Remote createAndStoreApiKey(name?: string): Promise<MoldexApiKeySelection>',
+        description: 'Create one tenant API key and store its plaintext under the configured reference.',
+        parameters: [{ name: 'name', description: 'human-readable key label; defaults to `DSH Desktop`.' }],
+        returns: 'the created key facts for display.',
+      },
+      {
+        signature: '@Remote listApiKeys(): Promise<MoldexApiKeyList>',
+        description: 'List the account\'s tenant API keys for display.',
+        parameters: [],
+        returns: 'key entries in server order.',
+      },
+    ],
+  },
+  {
     key: 'officeToPdf',
     summary: 'A provider lifetime owns all converters, queued calls, and temporary files.',
     description: 'A provider lifetime owns all converters, queued calls, and temporary files.',
@@ -5832,6 +5857,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ModelReasoningEffort',
     declaration: 'export interface ModelReasoningEffort {\n    readonly id: string;\n    readonly name: string;\n    readonly description?: string;\n}',
+  },
+  {
+    name: 'MoldexApiKeyEntry',
+    declaration: 'export interface MoldexApiKeyEntry {\n    readonly id: string;\n    readonly name: string;\n    readonly key_prefix: string;\n    readonly is_active: boolean;\n}',
+  },
+  {
+    name: 'MoldexApiKeyList',
+    declaration: 'export type MoldexApiKeyList = readonly MoldexApiKeyEntry[];',
+  },
+  {
+    name: 'MoldexApiKeySelection',
+    declaration: 'export interface MoldexApiKeySelection {\n    readonly id: string;\n    readonly keyPrefix: string;\n    readonly name: string;\n}',
+  },
+  {
+    name: 'MoldexSignInInput',
+    declaration: 'export interface MoldexSignInInput {\n    readonly account: string;\n    readonly password: string;\n}',
   },
   {
     name: 'NativeFileApplication',

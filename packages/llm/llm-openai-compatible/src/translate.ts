@@ -31,20 +31,29 @@ interface OpenAIDelta {
   tool_calls?: ToolFragment[]
 }
 
+interface OpenAIMessage {
+  content?: string | null
+  tool_calls?: ToolFragment[]
+}
+
 interface OpenAIChoice {
   delta?: OpenAIDelta | null
+  message?: OpenAIMessage | null
   finish_reason?: string | null
+}
+
+type OpenAIUsageWire = {
+  prompt_tokens?: number
+  completion_tokens?: number
+  total_tokens?: number
+  prompt_tokens_details?: { cached_tokens?: number }
+  completion_tokens_details?: { reasoning_tokens?: number }
 }
 
 interface OpenAIChunk {
   choices?: OpenAIChoice[]
-  usage?: {
-    prompt_tokens?: number
-    completion_tokens?: number
-    total_tokens?: number
-    prompt_tokens_details?: { cached_tokens?: number }
-    completion_tokens_details?: { reasoning_tokens?: number }
-  }
+  /** Some multi-vendor gateways emit `usage: null` on intermediate SSE frames. */
+  usage?: OpenAIUsageWire | null
 }
 
 /** Project wire chunks onto first-seen block order; at most one prose block is open at a time. */
@@ -61,23 +70,34 @@ export class OpenAIStreamTranslator {
    */
   push(event: Record<string, unknown>): StreamChunk[] {
     const chunk = event as OpenAIChunk
-    if (chunk.usage !== undefined) this.usage = this.wireUsage(chunk.usage)
+    if (chunk.usage != null) this.usage = this.wireUsage(chunk.usage)
     const choice = chunk.choices?.[0]
     if (choice === undefined) return []
     if (this.finishReason === undefined && choice.finish_reason != null) {
       this.finishReason = this.wireFinishReason(choice.finish_reason)
     }
     const delta = choice.delta
-    if (delta === undefined || delta === null) return []
+    if (delta !== undefined && delta !== null) {
+      const output: StreamChunk[] = []
+      const reasoning = delta.reasoning_content ?? delta.reasoning
+      if (typeof reasoning === 'string' && reasoning.length > 0) {
+        output.push(...this.proseDelta('reasoning', reasoning))
+      }
+      if (typeof delta.content === 'string' && delta.content.length > 0) {
+        output.push(...this.proseDelta('text', delta.content))
+      }
+      for (const fragment of delta.tool_calls ?? []) {
+        output.push(...this.toolDelta(fragment))
+      }
+      return output
+    }
+    const message = choice.message
+    if (message === undefined || message === null) return []
     const output: StreamChunk[] = []
-    const reasoning = delta.reasoning_content ?? delta.reasoning
-    if (typeof reasoning === 'string' && reasoning.length > 0) {
-      output.push(...this.proseDelta('reasoning', reasoning))
+    if (typeof message.content === 'string' && message.content.length > 0) {
+      output.push(...this.proseDelta('text', message.content))
     }
-    if (typeof delta.content === 'string' && delta.content.length > 0) {
-      output.push(...this.proseDelta('text', delta.content))
-    }
-    for (const fragment of delta.tool_calls ?? []) {
+    for (const fragment of message.tool_calls ?? []) {
       output.push(...this.toolDelta(fragment))
     }
     return output
@@ -176,7 +196,7 @@ export class OpenAIStreamTranslator {
     return { kind: 'stop' }
   }
 
-  private wireUsage(usage: NonNullable<OpenAIChunk['usage']>): TokenUsage {
+  private wireUsage(usage: OpenAIUsageWire): TokenUsage {
     const promptTokens = usage.prompt_tokens ?? 0
     const cached = usage.prompt_tokens_details?.cached_tokens ?? 0
     return {

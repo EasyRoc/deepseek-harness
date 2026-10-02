@@ -22,7 +22,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用此包
 
-没有 `baseURL` 的行处于惰性状态:组合层可以挂载未配置的插件,后续补上 `baseURL` 的配置会激活该路由。`apiKeyEnv` 默认为 `OPENAI_COMPATIBLE_API_KEY` 并按请求解析——credentials 服务优先,只有未挂载该服务的组合才直接读取启动环境。凭据缺失以 `MISSING_CREDENTIAL` 失败。
+没有 `baseURL` 的行处于惰性状态:组合层可以挂载未配置的插件,后续补上 `baseURL` 的配置会激活该路由。`apiKeyEnv` 默认为 `OPENAI_COMPATIBLE_API_KEY` 并按请求解析——credentials 服务优先,只有未挂载该服务的组合才直接读取启动环境。凭据缺失以 `MISSING_CREDENTIAL` 失败。`requireAccountSession` 默认为 `false`;设为 `true` 时,在解析 API key 之前要求 `deepseekAccount.getState()` 为 `credential-stored`,否则以 `ACCOUNT_SIGN_IN_REQUIRED` 失败,模型发现返回空列表。
 
 ```yaml
 - id: llm-openai-compatible
@@ -36,7 +36,7 @@ kind: "package-reference"
         contextWindow: 128000
 ```
 
-`baseURL` 需包含版本路径,且必须是不含凭据、query、fragment 与尾部斜杠的 HTTP(S) 根;校验在加载期失败。`provider` 命名注册的路由,因此不同配置可以并排挂载多个网关。`models` 是建议性的选择器目录;当其为空且网关暴露 `/v1/models` 时,列表选择会以五分钟缓存从 listing 发现。`retryPolicy` 由提供方持有:[重试插件](../llm-retry/README.zh.md)按下列稳定失败码执行它。
+`baseURL` 需包含版本路径,且必须是不含凭据、query、fragment 与尾部斜杠的 HTTP(S) 根;校验在加载期失败。`provider` 命名注册的路由,因此不同配置可以并排挂载多个网关。`models` 是建议性的选择器目录;当其为空且网关暴露 `/v1/models` 时,列表选择会以五分钟缓存从 listing 发现。`streamUsage` 默认为 `true` 并发送 `stream_options.include_usage`;多厂商网关若仅部分模型接受该字段,可设为 `false`。`retryPolicy` 由提供方持有:[重试插件](../llm-retry/README.zh.md)按下列稳定失败码执行它。
 
 状态分类遵循 OpenAI 契约并带一处刻意扩展:HTTP 402——one-api 系网关的余额耗尽信号——映射为终态 `QUOTA` 码且从不重试;403 将无效、禁用或范围受限的 key 标记为 `AUTH`。
 

@@ -72,6 +72,7 @@
     "@deepseek-ai/dsh-client-resources": "workspace:*",
     "@deepseek-ai/dsh-client-shortcuts": "workspace:*",
     "@deepseek-ai/dsh-client-ui-account-moldex": "workspace:*",
+    "@deepseek-ai/dsh-moldex-account": "workspace:*",
     "@deepseek-ai/dsh-client-ui-agent-preset": "workspace:*",
     "@deepseek-ai/dsh-client-ui-approval": "workspace:*",
     "@deepseek-ai/dsh-client-ui-attachment": "workspace:*",

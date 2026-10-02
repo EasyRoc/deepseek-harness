@@ -30,7 +30,25 @@ export function apply(ctx: Context, config: Config): void {
   const options = (): Options => plainOptions(config)
   const resolved = (): OpenAICompatConnectionOptions | undefined => resolveAdapterOptions(options(), launchEnvironmentOf(ctx))
   resolved()
+  const ensureAccountSession = async (connection: OpenAICompatConnectionOptions): Promise<void> => {
+    if (!connection.requireAccountSession) return
+    const account = ctx.get('deepseekAccount')
+    if (account === undefined) {
+      throw new LlmError(
+        `llm-openai-compatible: provider route "${connection.provider}" requires a signed-in account, but no account service is mounted`,
+        'ACCOUNT_SIGN_IN_REQUIRED',
+      )
+    }
+    const state = await account.getState()
+    if (state.status !== 'credential-stored') {
+      throw new LlmError(
+        `Sign in before using provider route "${connection.provider}".`,
+        'ACCOUNT_SIGN_IN_REQUIRED',
+      )
+    }
+  }
   const resolveAuth = async (connection: OpenAICompatConnectionOptions): Promise<{ headers: Record<string, string> }> => {
+    await ensureAccountSession(connection)
     const ref = connection.apiKeyEnv
     const credentials = ctx.get('credentials')
     if (credentials !== undefined) {
@@ -66,7 +84,13 @@ export function apply(ctx: Context, config: Config): void {
       const connection = resolvedOrThrow()
       const now = Date.now()
       if (discovery !== undefined && now - discovery.fetchedAt < MODEL_DISCOVERY_TTL_MS) return discovery.models
-      const auth = await resolveAuth(connection)
+      let auth: { headers: Record<string, string> }
+      try {
+        auth = await resolveAuth(connection)
+      } catch (error) {
+        if (error instanceof LlmError && error.code === 'ACCOUNT_SIGN_IN_REQUIRED') return []
+        throw error
+      }
       const models = await fetchGatewayModels(connection.baseURL, auth.headers, new AbortController().signal)
       discovery = { models, fetchedAt: now }
       ctx.logger.debug(`llm-openai-compatible: discovered ${models.length} models from ${connection.baseURL} for route "${provider}"`)

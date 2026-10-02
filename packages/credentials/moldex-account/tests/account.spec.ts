@@ -15,7 +15,11 @@ afterEach(async () => {
 async function booted(behavior?: Partial<TenantBehavior>) {
   const instance = await fixture()
   cleanups.push(instance.dispose)
-  Object.assign(instance.behavior, behavior)
+  if (behavior !== undefined) {
+    const { responses, ...rest } = behavior
+    Object.assign(instance.behavior, rest)
+    if (responses !== undefined) Object.assign(instance.behavior.responses, responses)
+  }
   return instance
 }
 
@@ -120,6 +124,12 @@ describe('MoldexAccount', () => {
         expect(authorization).toBe('Bearer access-2')
         return Response.json(profileBody)
       }
+      if (url.endsWith('/api-keys')) {
+        return Response.json({
+          success: true,
+          data: { id: 'key-auto', key: 'sk-moldex-new', key_prefix: 'sk-moldex-n', name: 'DSH Desktop' },
+        })
+      }
       throw new Error(`unexpected ${url}`)
     }))
     // Seed the stored grant through a sign-in against the stubbed transport.
@@ -182,12 +192,21 @@ describe('MoldexAccount', () => {
 
   it('creates an API key and stores its plaintext under the configured reference', async () => {
     const instance = await signedIn({
-      responses: { '/api/v1/tenant/api-keys': { success: true, data: { id: 'key-1', key: 'sk-moldex-new', key_prefix: 'sk-moldex-n', name: 'DSH Desktop' } } },
+      responses: { 'POST /api/v1/tenant/api-keys': { success: true, data: { id: 'key-1', key: 'sk-moldex-new', key_prefix: 'sk-moldex-n', name: 'DSH Desktop' } } },
     })
     const created = await instance.account.createAndStoreApiKey()
     expect(created).toEqual({ id: 'key-1', keyPrefix: 'sk-moldex-n', name: 'DSH Desktop' })
     const stored = await instance.ctx.credentials.resolve(credentialRef('MOLDEX_API_KEY'))
     expect(stored?.value).toBe('sk-moldex-new')
+  })
+
+  it('removes the stored inference key on sign-out', async () => {
+    const instance = await signedIn({
+      responses: { 'POST /api/v1/tenant/api-keys': { success: true, data: { id: 'key-1', key: 'sk-moldex-new', key_prefix: 'sk-moldex-n', name: 'DSH Desktop' } } },
+    })
+    await instance.account.createAndStoreApiKey()
+    await instance.account.signOut(client)
+    expect(await instance.ctx.credentials.resolve(credentialRef('MOLDEX_API_KEY'))).toBeUndefined()
   })
 
   it('refuses key operations while signed out', async () => {
@@ -198,7 +217,7 @@ describe('MoldexAccount', () => {
 
   it('lists API keys after sign-in', async () => {
     const instance = await signedIn({
-      responses: { '/api/v1/tenant/api-keys': { success: true, data: [{ id: 'key-1', name: 'DSH Desktop', key_prefix: 'sk-moldex-n', is_active: true }] } },
+      responses: { 'GET /api/v1/tenant/api-keys': { success: true, data: [{ id: 'key-1', name: 'DSH Desktop', key_prefix: 'sk-moldex-n', is_active: true }] } },
     })
     expect(await instance.account.listApiKeys()).toEqual([
       { id: 'key-1', name: 'DSH Desktop', key_prefix: 'sk-moldex-n', is_active: true },

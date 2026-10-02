@@ -213,7 +213,7 @@ export function apply(ctx: Context): void {
         const result = await ctx.remote.account.startSignIn(client(),
           transport?.streamBaseUrl !== undefined ? new URL(transport.streamBaseUrl).origin : window.location.origin,
           'desktop')
-        if (!result.ok) throw new Error('account start failed')
+        if (!result.ok) throw new Error(result.error.message)
       } catch (error) {
         publish({ ...snapshot, loginFailed: true })
         throw error

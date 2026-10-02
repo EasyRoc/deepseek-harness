@@ -36,7 +36,7 @@ A row without `baseURL` is inert: composition may mount the plugin unconfigured,
         contextWindow: 128000
 ```
 
-`baseURL` includes the version path and must be an HTTP(S) root without credentials, query, fragment, or a trailing slash; validation fails at load. `provider` names the registered route, so distinct configurations can mount several gateways side by side. `models` is the advisory selector catalog; when it is empty and a gateway exposes `/v1/models`, list selection discovers from the listing with a five-minute cache. `retryPolicy` is provider-owned: the [retry plugin](../llm-retry/README.md) executes it against the stable failure codes below.
+`baseURL` includes the version path and must be an HTTP(S) root without credentials, query, fragment, or a trailing slash; validation fails at load. `provider` names the registered route, so distinct configurations can mount several gateways side by side. `models` is the advisory selector catalog; when it is empty and a gateway exposes `/v1/models`, list selection discovers from the listing with a five-minute cache. `streamUsage` defaults to `true` and sends `stream_options.include_usage`; set it to `false` when a multi-vendor gateway accepts usage on some models but rejects the field on others. `retryPolicy` is provider-owned: the [retry plugin](../llm-retry/README.md) executes it against the stable failure codes below.
 
 Status classification follows the OpenAI contract with one deliberate extension: an HTTP 402 — the exhausted-balance signal used by one-api family gateways — maps to the terminal `QUOTA` code and is never retried; 403 marks invalid, disabled, or scope-restricted keys as `AUTH`.
 

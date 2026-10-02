@@ -34,6 +34,12 @@ export interface OpenAICompatConnectionOptions {
   retryPolicy: ResolvedRetryPolicy
   /** Credential reference resolved per request. */
   apiKeyEnv: CredentialRef
+  /** When true, request streaming usage in `stream_options`; some multi-vendor gateways reject it. */
+  streamUsage: boolean
+  /** When true, refuse inference until the mounted account provider stores a credential. */
+  requireAccountSession: boolean
+  /** Lowercase substrings; matching wire model ids omit tools on chat-completions requests. */
+  toolOmitModelSubstrings: string[]
 }
 
 /** Request-local dependencies the plugin binds to one adapter instance. */

@@ -43,8 +43,13 @@ it.each([en, zh])('shows waiting actions and cancels before dismissing', async (
   expect(props.cancel).toHaveBeenCalledExactlyOnceWith(id)
   expect(props.close).toHaveBeenCalledOnce()
 })
+it('defers to the Moldex overlay for form-based attempts without an authorize URL', () => {
+  render(<SignInDialog {...dialogProps({ id, phase: 'initializing' })} />)
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
 it('keeps an admitted credential commit open on Escape and close', () => {
-  const props = mount({ id, phase: 'committing' })
+  const props = mount({ id, phase: 'committing', authorizeUrl: 'https://platform.deepseek.com/dsh/authorize?state=example' })
   fireEvent.keyDown(document, { key: 'Escape' })
   fireEvent.click(screen.getByRole('button', { name: en.close }))
   expect(props.close).not.toHaveBeenCalled()

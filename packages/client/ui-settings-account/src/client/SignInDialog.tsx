@@ -5,6 +5,7 @@ import type { AccountSnapshot } from './AccountSection.tsx'
 import type { SignInAttemptId } from '@deepseek-ai/dsh-deepseek-account/types'
 import type { AccountKey } from './locales.ts'
 import { authorizeUrlWithTheme } from './authorize-url.ts'
+import { isFormBasedSignInAttempt } from './sign-in-attempt.ts'
 import css from './SignInDialog.module.css'
 
 /** @param props - safe account state, localized copy, and user actions. @returns login dialog. */
@@ -30,6 +31,7 @@ export function SignInDialog({ account, colorScheme, start, cancel, close, useAp
   }, [copyResult])
   const authorizeUrl = attempt?.authorizeUrl
   const phase = attempt?.phase
+  if (isFormBasedSignInAttempt(account.view)) return null
   const active = busy || phase === 'initializing' || phase === 'waiting-browser' || phase === 'exchanging' || phase === 'committing'
   const expired = phase === 'expired'
   const error = failed || account.loginFailed || account.failed || phase === 'failed'

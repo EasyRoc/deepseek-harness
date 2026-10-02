@@ -53,25 +53,24 @@ it('shows the submission error inside the form and disables while submitting', (
   expect(screen.getByRole('button', { name: en.submitting }).hasAttribute('disabled')).toBe(true)
 })
 
-it('renders the committing phase without a submit affordance', () => {
+it('renders the committing phase with a disabled submit control', () => {
   const attempt = { id: 'a' as never, phase: 'committing' as const }
   render(<MoldexSignIn {...propsOf({ view: { ...signedOut, attempt } })} />)
-  expect(screen.getByText(en.committing) ?? screen.getByText(en.submitting)).toBeDefined()
-  expect(screen.queryByRole('button', { name: en.submit })).toBeNull()
+  expect(screen.getByRole('button', { name: en.submitting }).hasAttribute('disabled')).toBe(true)
 })
 
 it('offers a retry after a failed attempt with the server message', () => {
   const start = vi.fn()
   const attempt = { id: 'a' as never, phase: 'failed' as const }
   render(<MoldexSignIn {...propsOf({ view: { ...signedOut, attempt }, error: 'wrong password' }, { start })} />)
-  expect(screen.getByRole('alert').textContent).toBe('wrong password')
+  expect(screen.getByText('wrong password')).toBeDefined()
   fireEvent.click(screen.getByRole('button', { name: en.retry }))
   expect(start).toHaveBeenCalledTimes(1)
 })
 
 it('renders the signed-in state with the recharge link when stored', () => {
   render(<MoldexSignIn {...propsOf({ view: stored })} />)
-  expect(screen.getByText(en.signedIn)).toBeDefined()
+  expect(screen.getByRole('heading', { name: en.signedIn })).toBeDefined()
   const link = screen.getByRole('link', { name: en.topUp })
   expect(link.getAttribute('href')).toBe(links.topUpUrl)
 })

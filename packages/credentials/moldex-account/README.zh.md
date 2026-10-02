@@ -25,6 +25,14 @@ kind: "package-reference"
 
 `accountOrigin` 指向租户 API 与门户所在 origin(默认 `https://www.moldex.top`;生产环境租户 API 在门户源上,推理由 LLM provider 持有的独立网关主机承载)。`apiKeyEnv` 是创建的推理密钥写入的凭据引用名(默认 `MOLDEX_API_KEY`)。登录凭据按尝试经专用命名空间提交一次;密码从不持久化、记录或返回。access token 存活 24 小时,以单飞守卫做响应式刷新;刷新失败即过期登录并发出共享的会话过期通知。存储的 grant 记录签发 origin,配置 origin 变更时即被丢弃。
 
+通过 profile patch 激活（示例见同目录 `moldex-profile.patch.example.yml`），不要改 `dsh-base` 的默认组合。Desktop 端到端：把示例 patch 合并进 `$DSH_HOME/profiles/desktop/cordis.patch.yml`（开发环境默认在 `apps/desktop/.desktop-build/development/home/profiles/desktop/`），执行 `pnpm --filter @deepseek-ai/dsh-client-ui-account-moldex bundle` 与 `pnpm run start:desktop`（或 `dev:desktop`）。`desktop` profile 只能由 Electron 启动，不能用 `pnpm dsh desktop --patch`。登录入口：侧边栏 **更多 → 登录**（弹出 Moldex 表单），或 **设置 → 模型**。登录成功后提供方会在尚无推理密钥时自动创建并写入 `apiKeyEnv`。
+
+Patch 还应 **禁用 `llm-deepseek`**，否则 **设置 → 模型** 仍会出现 DeepSeek 官方路由。Moldex 推理只保留 **`llm-openai-compatible` 的 `provider: moldex`**；不要在 **`llm-pi-ai` 设置或 patch 里再挂一条 DeepSeek/`llm-pi-ai` 路由**（会与 Moldex 混用两套 Key，选择器也会出现两个 DeepSeek 来源）。示例把 `models` 留空，由网关 `/models` 发现列表；`agent-default-model` 指向你要的 wire id（例如 `glm-5.2`）。在 Moldex 路由上设置 **`requireAccountSession: true`**，未登录时推理以 `ACCOUNT_SIGN_IN_REQUIRED` 失败；登出或会话过期会清除 `MOLDEX_API_KEY`，避免未登录仍用残留密钥。
+
+**品牌与窗口标题**：挂载 `@deepseek-ai/dsh-client-ui-account-moldex` 后，侧栏 `sidebar.brand.*` 显示 Moldex 标识。Desktop 发布构建使用 **`DSH_DESKTOP_CLIENT_BUILD_PROFILE=moldex`**（`pnpm run build:moldex`），窗口标题为 Moldex。安装包名称与 Dock 图标由 `apps/desktop/.env.macos` 中的 **`DSH_DESKTOP_PRODUCT_NAME`**、**`DSH_DESKTOP_MAC_ICON`** 配置；示例见 **`apps/desktop/.env.macos.moldex.example`**，图标源运行 **`pnpm --dir apps/desktop run render:moldex-icon`**。GitHub Release 使用 Actions 工作流 **`moldex-agent-desktop-release.yml`**（需仓库密钥 **`MOLDEX_MACOS_ENV_FILE`**，内容为完整 `.env.macos`）。
+
+**同一 Moldex 路由下 DeepSeek 正常、GLM/Qwen 失败时**：示例 patch 设 **`streamUsage: false`**（部分上游不接受 `stream_options.include_usage`）。`llm-openai-compatible` 流式解析 **优先使用 `choices[].delta`**；若先读 `message` 再忽略 `delta`，GLM/Qwen 网关常因空 `message` 与有内容的 `delta` 同帧而收不到正文。修改 Host 后需 **`pnpm run build`** 再启 Desktop。
+
 ```yaml
 - id: moldex-account
   name: '@deepseek-ai/dsh-moldex-account'

@@ -229,6 +229,7 @@ export class MoldexAccount extends DeepSeekAccount {
         }
         await this.ctx.credentials.deleteRecord(KEY)
       }
+      await this.clearStoredInferenceKey()
       this.attempt = undefined
       this.ctx.emit('deepseek-account/signed-out')
       this.changed()
@@ -304,6 +305,10 @@ export class MoldexAccount extends DeepSeekAccount {
     }
     attempt.submitted.resolve(tokens)
     await attempt.done
+    const state = await this.getState()
+    if (state.status === 'credential-stored' && await this.ctx.credentials.resolve(credentialRef(this.apiKeyEnv)) === undefined) {
+      await this.createAndStoreApiKey()
+    }
     return this.getState()
   }
 
@@ -433,10 +438,16 @@ export class MoldexAccount extends DeepSeekAccount {
     if (record === undefined) return
     if (record.kind !== 'grant') throw new MoldexApiError('STORAGE', 'moldex-account: stored credential is not a grant')
     await this.ctx.credentials.deleteRecord(KEY)
+    await this.clearStoredInferenceKey()
     this.ctx.emit('deepseek-account/session-expired')
     this.attempt = undefined
     this.ctx.emit('deepseek-account/signed-out')
     this.changed()
+  }
+
+  /** Drop the tenant inference key so signed-out sessions cannot reuse a stored API key. */
+  private async clearStoredInferenceKey(): Promise<void> {
+    await this.ctx.credentials.unset(credentialRef(this.apiKeyEnv))
   }
 
   /** Expire the login only when the failure is a platform authentication rejection.

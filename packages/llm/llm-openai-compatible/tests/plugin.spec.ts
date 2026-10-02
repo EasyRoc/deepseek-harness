@@ -35,6 +35,9 @@ function mutableConfig(initial: BootOptions = {}) {
     defaultContextWindow: mutableRef(state.defaultContextWindow),
     streamIdleTimeoutMs: mutableRef(state.streamIdleTimeoutMs),
     retryPolicy: mutableRef(state.retryPolicy),
+    streamUsage: mutableRef(state.streamUsage ?? true),
+    requireAccountSession: mutableRef(state.requireAccountSession ?? false),
+    toolOmitModelSubstrings: mutableRef(state.toolOmitModelSubstrings ?? []),
   }
   return { config: fields as Plugin.Config, fields }
 }

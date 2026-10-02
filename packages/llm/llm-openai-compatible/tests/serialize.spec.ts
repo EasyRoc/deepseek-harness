@@ -73,6 +73,12 @@ describe('serialize', () => {
     expect(body.messages).toEqual([{ role: 'tool', tool_call_id: 'call_1', content: 'done' }])
   })
 
+  it('omits stream_options when streamUsage is disabled on the route', () => {
+    const body = serialize({ provider: 'p', model: MODEL, messages: [user()] }, resolved({ streamUsage: false }))
+    expect(body.stream).toBe(true)
+    expect(body.stream_options).toBeUndefined()
+  })
+
   it('carries optional request fields and the connection output default', () => {
     const body = serialize({
       provider: 'p', model: MODEL, messages: [user()], temperature: 0.5, maxTokens: 128, stop: ['END'],
@@ -82,6 +88,20 @@ describe('serialize', () => {
     expect(body.stop).toEqual(['END'])
     const defaulted = serialize({ provider: 'p', model: MODEL, messages: [user()] }, resolved({ maxTokens: 77 }))
     expect(defaulted.max_tokens).toBe(77)
+  })
+
+  it('omits tools when the wire model matches a configured substring', () => {
+    const route = resolved({ toolOmitModelSubstrings: ['glm', 'qwen'] })
+    const body = serialize({
+      provider: 'p', model: 'glm-5.3-flash', messages: [user()],
+      tools: [{ name: 'echo', description: 'Echo', parameters: { type: 'object' } }],
+    }, route)
+    expect(body.tools).toBeUndefined()
+    const kept = serialize({
+      provider: 'p', model: 'deepseek-v4-flash', messages: [user()],
+      tools: [{ name: 'echo', description: 'Echo', parameters: { type: 'object' } }],
+    }, route)
+    expect(kept.tools).toHaveLength(1)
   })
 
   it('serializes declared tools and rejects deferred loading', () => {

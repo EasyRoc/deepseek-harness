@@ -33,6 +33,14 @@ Implement the account Service Definition for Moldex deployments: the dedicated `
     apiKeyEnv: MOLDEX_API_KEY
 ```
 
+Activate through a profile patch (see `moldex-profile.patch.example.yml` in this directory); do not change the shipped `dsh-base` composition. For Desktop, merge the example into `$DSH_HOME/profiles/desktop/cordis.patch.yml` (development default: `apps/desktop/.desktop-build/development/home/profiles/desktop/`), run `pnpm --filter @deepseek-ai/dsh-client-ui-account-moldex bundle`, then `pnpm run start:desktop` or `dev:desktop`. The `desktop` profile is Electron-only; `pnpm dsh desktop --patch` is not supported. Sign in from the sidebar **More → Sign in** (Moldex form overlay) or **Settings → Models**. After sign-in, the provider creates and stores an inference key under `apiKeyEnv` when none exists.
+
+Also **disable `llm-deepseek`** in the patch so **Settings → Models** does not list the DeepSeek official route. Keep a single Moldex inference route via **`llm-openai-compatible` with `provider: moldex`**; do not add a parallel **`llm-pi-ai` DeepSeek route** in the same patch (two key surfaces and two DeepSeek entries in the picker). The example leaves `models` empty so `/models` discovery keeps picker wire ids aligned with the gateway; point `agent-default-model` at your wire id (for example `glm-5.2`). Set **`requireAccountSession: true`** on the Moldex route so unsigned sessions fail with `ACCOUNT_SIGN_IN_REQUIRED`; sign-out and session expiry clear `MOLDEX_API_KEY` so leftover keys cannot bypass the login gate.
+
+Mount **`@deepseek-ai/dsh-client-ui-account-moldex`** for Moldex **`sidebar.brand.*`** occupants. Set **`DSH_CLIENT_TITLE=Moldex`** when building the Desktop client bundle so the window and document title show Moldex instead of the localized local-build fallback.
+
+When **DeepSeek models on the Moldex route work but GLM or Qwen fail**, the example sets **`streamUsage: false`** because some upstreams reject `stream_options.include_usage`. The OpenAI-compatible stream translator must **prefer `choices[].delta` over `message`** on each SSE frame; some GLM/Qwen gateways emit an empty `message` alongside a populated `delta`, and reading `message` first drops the stream body. Rebuild (`pnpm run build`) before Desktop so Host changes take effect.
+
 Bonus operations answer the contract's absent outcomes: Moldex grants no promotional bonus notifications. `getPlatformSession` resolves null because Moldex has no embedded-platform document semantics, and `resolveToken` resolves undefined because inference authenticates with the tenant API key owned by the credentials store.
 
 <a id="understand-the-implementation"></a>

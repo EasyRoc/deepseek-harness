@@ -21,6 +21,8 @@ describe('resolveAdapterOptions', () => {
       defaultContextWindow: 128_000,
       models: [],
       apiKeyEnv: credentialRef('OPENAI_COMPATIBLE_API_KEY'),
+      requireAccountSession: false,
+      toolOmitModelSubstrings: [],
     })
   })
 

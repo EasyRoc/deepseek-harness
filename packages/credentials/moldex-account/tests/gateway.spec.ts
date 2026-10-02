@@ -42,13 +42,13 @@ describe('MoldexAccountGateway', () => {
     const state = await gateway.submitCredentials({ account: 'roceasy@qq.com', password: 'secret' })
     expect(state.status).toBe('credential-stored')
 
-    instance.behavior.responses['/api/v1/tenant/api-keys'] = {
+    instance.behavior.responses['POST /api/v1/tenant/api-keys'] = {
       success: true,
       data: { id: 'key-1', key: 'sk-moldex-new', key_prefix: 'sk-moldex-n', name: 'DSH Desktop' },
     }
     expect(await gateway.createAndStoreApiKey()).toEqual({ id: 'key-1', keyPrefix: 'sk-moldex-n', name: 'DSH Desktop' })
 
-    instance.behavior.responses['/api/v1/tenant/api-keys'] = {
+    instance.behavior.responses['GET /api/v1/tenant/api-keys'] = {
       success: true,
       data: [{ id: 'key-1', name: 'DSH Desktop', key_prefix: 'sk-moldex-n', is_active: true }],
     }

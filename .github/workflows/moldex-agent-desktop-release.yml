@@ -1,0 +1,87 @@
+# Build a signed Moldex Agent macOS DMG and attach it to a GitHub Release.
+# Configure repository secrets before the first run (see job step "Write macOS settings").
+name: Moldex Agent Desktop (macOS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Git tag for the release (for example v0.2.0-moldex.1)
+        required: true
+        type: string
+      target:
+        description: macOS package target
+        required: true
+        default: mac-arm64
+        type: choice
+        options:
+          - mac-arm64
+          - mac-x64
+
+permissions:
+  contents: write
+
+concurrency:
+  group: moldex-agent-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PRIMARY_NODE_VERSION: '24'
+  DSH_TELEMETRY_DISABLED: '1'
+
+jobs:
+  package-macos:
+    name: Package ${{ inputs.target }}
+    runs-on: ${{ inputs.target == 'mac-arm64' && 'macos-14' || 'macos-13' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Render Moldex macOS icon
+        run: pnpm --dir apps/desktop run render:moldex-icon
+
+      - name: Write macOS release settings
+        env:
+          MOLDEX_MACOS_ENV: ${{ secrets.MOLDEX_MACOS_ENV_FILE }}
+        run: |
+          if [ -z "$MOLDEX_MACOS_ENV" ]; then
+            echo 'Missing repository secret MOLDEX_MACOS_ENV_FILE (full apps/desktop/.env.macos contents).'
+            exit 1
+          fi
+          printf '%s' "$MOLDEX_MACOS_ENV" > apps/desktop/.env.macos
+
+      - name: Package Desktop
+        run: pnpm run package:desktop:${{ inputs.target == 'mac-arm64' && 'mac:arm64' || 'mac:x64' }}
+
+      - name: Collect artifacts
+        id: artifacts
+        run: |
+          shopt -s nullglob
+          files=(apps/desktop/.desktop-build/targets/${{ inputs.target }}/artifacts/*.dmg)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo 'No DMG found under artifacts/'
+            exit 1
+          fi
+          printf '%s\n' "${files[@]}" > artifact-paths.txt
+          cat artifact-paths.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: Moldex Agent ${{ inputs.tag }}
+          generate_release_notes: true
+          files: |
+            apps/desktop/.desktop-build/targets/${{ inputs.target }}/artifacts/*.dmg
+            apps/desktop/.desktop-build/targets/${{ inputs.target }}/artifacts/*.zip

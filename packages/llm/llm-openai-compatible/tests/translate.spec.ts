@@ -3,6 +3,38 @@ import { describe, expect, it } from 'vitest'
 import { OpenAIStreamTranslator } from '../src/translate.ts'
 
 describe('OpenAIStreamTranslator', () => {
+  it('prefers delta over an empty message object on streaming frames', () => {
+    const translator = new OpenAIStreamTranslator()
+    expect(translator.push({
+      choices: [{
+        message: { role: 'assistant', content: null } as never,
+        delta: { content: 'Hi' },
+      }],
+    })).toEqual([
+      { type: 'block-start', index: 0, blockType: 'text' },
+      { type: 'text-delta', index: 0, text: 'Hi' },
+    ])
+  })
+
+  it('maps a non-stream message object onto text and tool-call blocks', () => {
+    const translator = new OpenAIStreamTranslator()
+    expect(translator.push({
+      choices: [{
+        message: {
+          content: 'done',
+          tool_calls: [{ index: 0, id: 'call_1', function: { name: 'echo', arguments: '{}' } }],
+        },
+        finish_reason: 'tool_calls',
+      }],
+    })).toEqual([
+      { type: 'block-start', index: 0, blockType: 'text' },
+      { type: 'text-delta', index: 0, text: 'done' },
+      { type: 'block-end', index: 0, block: { type: 'text', text: 'done' } },
+      { type: 'block-start', index: 1, blockType: 'tool-call' },
+      { type: 'tool-call-delta', index: 1, id: 'call_1', name: 'echo', argumentsDelta: '{}' },
+    ])
+  })
+
   it('continues one text block across contiguous deltas', () => {
     const translator = new OpenAIStreamTranslator()
     expect(translator.push({ choices: [{ delta: { content: 'Hel' } }] })).toEqual([
@@ -83,6 +115,18 @@ describe('OpenAIStreamTranslator', () => {
     expect(tail.slice(0, 4)).toEqual([
       { type: 'block-end', index: 2, block: { type: 'text', text: 'b' } },
       { type: 'block-end', index: 1, block: { type: 'tool-call', id: 'call_1', name: 'e', arguments: '{}' } },
+      { type: 'usage', usage: { inputTokens: 0, outputTokens: 0 } },
+      { type: 'finish', reason: { kind: 'stop' } },
+    ])
+  })
+
+  it('ignores a null usage object on intermediate streaming frames', () => {
+    const translator = new OpenAIStreamTranslator()
+    expect(() => {
+      translator.push({ choices: [{ delta: { content: 'Hi' } }], usage: null })
+    }).not.toThrow()
+    expect(translator.done()).toEqual([
+      { type: 'block-end', index: 0, block: { type: 'text', text: 'Hi' } },
       { type: 'usage', usage: { inputTokens: 0, outputTokens: 0 } },
       { type: 'finish', reason: { kind: 'stop' } },
     ])

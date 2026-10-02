@@ -12,6 +12,7 @@
     { "path": "../ui-slots" },
     { "path": "../ui-primitives" },
     { "path": "../ui-renderer" },
-    { "path": "../ui-settings-models" }
+    { "path": "../ui-settings-models" },
+    { "path": "../ui-sidebar" }
   ]
 }

@@ -18,7 +18,7 @@ export interface WireBody {
   messages: WireMessage[]
   tools?: { type: 'function'; function: { name: string; description: string; parameters: Record<string, unknown> } }[]
   stream: true
-  stream_options: { include_usage: true }
+  stream_options?: { include_usage: true }
   temperature?: number
   max_tokens?: number
   stop?: string[]
@@ -119,13 +119,15 @@ export function serialize(options: GenerateOptions, connection: OpenAICompatConn
     const wire = wireMessage(message)
     if (wire !== undefined) messages.push(wire)
   }
-  const tools = wireTools(options.tools)
+  const wireModel = options.model.toLowerCase()
+  const omitTools = connection.toolOmitModelSubstrings.some(substring => wireModel.includes(substring))
+  const tools = omitTools ? undefined : wireTools(options.tools)
   return {
     model: options.model,
     messages,
     ...tools === undefined ? {} : { tools },
     stream: true,
-    stream_options: { include_usage: true },
+    ...connection.streamUsage ? { stream_options: { include_usage: true } } : {},
     ...options.temperature === undefined ? {} : { temperature: options.temperature },
     max_tokens: options.maxTokens ?? connection.maxTokens,
     ...options.stop === undefined ? {} : { stop: options.stop },

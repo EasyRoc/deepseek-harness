@@ -1,6 +1,7 @@
 /** Moldex tenant account provider: form login, single-flight JWT refresh, and key storage. */
 
 export { Config, originOf } from './config.ts'
+import { Config } from './config.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type { AccountView } from '@deepseek-ai/dsh-deepseek-account/types'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
@@ -11,6 +12,7 @@ declare module '@deepseek-ai/cordis' {
     moldexAccountGateway: MoldexAccountGateway
   }
 }
+import { installAccountTaskCancellation } from '@deepseek-ai/dsh-deepseek-account'
 import { MoldexAccount } from './service.ts'
 import type { MoldexApiKeyList, MoldexApiKeySelection, MoldexSignInInput } from './types.ts'
 
@@ -66,3 +68,15 @@ export class MoldexAccountGateway extends TypertRemoteService {
 export { MoldexAccount, MoldexApiError } from './service.ts'
 export { moldexAccountKey as KEY } from './service.ts'
 export type { MoldexApiKeyList, MoldexApiKeySelection, MoldexSignInInput } from './types.ts'
+
+/** Mount the account provider and its Remote gateway for Loader entry `@deepseek-ai/dsh-moldex-account`. */
+export function apply(ctx: Context, config: Config = {}): void {
+  ctx.plugin(MoldexAccount, config)
+  ctx.plugin(MoldexAccountGateway)
+  installAccountTaskCancellation(ctx)
+}
+
+apply.inject = MoldexAccount.inject
+apply.Config = Config
+
+export default apply

@@ -63,7 +63,8 @@ export class OpenAICompatAdapter<C extends Connection = Connection> extends LlmA
       }
       if (options.signal?.aborted) throw new LlmError('OpenAI-compatible request aborted', 'ABORTED', { cause: error })
       if (error instanceof LlmError) throw error
-      throw new LlmError('OpenAI-compatible transport failed', 'TRANSPORT', { cause: error })
+      const detail = error instanceof Error && error.message.length > 0 ? `: ${error.message}` : ''
+      throw new LlmError(`OpenAI-compatible transport failed${detail}`, 'TRANSPORT', { cause: error })
     } finally {
       consumer.abort()
       try { await iterator.return(undefined) } catch (_abortedRequestCleanup) {
@@ -86,6 +87,7 @@ export class OpenAICompatAdapter<C extends Connection = Connection> extends LlmA
         ...auth.headers,
       },
     })
+    const contentType = response.headers.get('content-type') ?? ''
     if (!response.ok) {
       const text = await response.text()
       let raw: unknown
@@ -95,8 +97,24 @@ export class OpenAICompatAdapter<C extends Connection = Connection> extends LlmA
       const failure = providerError(raw, response.status, response.headers)
       throw new LlmError(failure.message, failure.code, { ...failure.failure, cause: new Error(text) })
     }
-    if (response.body === null) throw new LlmError('OpenAI-compatible response has no body', 'EMPTY_RESPONSE')
     const translator = new OpenAIStreamTranslator()
+    if (contentType.includes('application/json')) {
+      let raw: unknown
+      try {
+        raw = await response.json()
+      } catch (error) {
+        throw new LlmError('OpenAI-compatible JSON response is malformed', 'MALFORMED_RESPONSE', { cause: error })
+      }
+      if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+        throw new LlmError('OpenAI-compatible JSON response is not an object', 'MALFORMED_RESPONSE')
+      }
+      const envelope = raw as Record<string, unknown>
+      if (typeof envelope.error === 'object' && envelope.error !== null) throw providerError(envelope, undefined)
+      yield* translator.push(envelope)
+      yield* translator.done()
+      return
+    }
+    if (response.body === null) throw new LlmError('OpenAI-compatible response has no body', 'EMPTY_RESPONSE')
     for await (const frame of parseSse(response.body, activity)) {
       yield* translator.push(frame)
     }

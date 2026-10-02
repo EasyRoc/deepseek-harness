@@ -38,6 +38,7 @@ export const config = (overrides: Partial<Options> = {}): Options => ({
   maxTokens: 8192,
   defaultContextWindow: 128_000,
   streamIdleTimeoutMs: 300_000,
+  streamUsage: true,
   ...overrides,
 })
 

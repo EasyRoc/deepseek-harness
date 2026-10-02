@@ -1,0 +1,15 @@
+.mark {
+  display: block;
+  flex-shrink: 0;
+  object-fit: contain;
+  object-position: left center;
+  border-radius: var(--dsw-radius-lg);
+}
+
+.name {
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+  white-space: nowrap;
+}

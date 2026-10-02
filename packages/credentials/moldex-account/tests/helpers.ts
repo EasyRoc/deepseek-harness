@@ -9,6 +9,7 @@ import { Context } from '@deepseek-ai/cordis'
 import AuthorizationService from '@deepseek-ai/dsh-authorization'
 import { LocalCredentialProvider } from '@deepseek-ai/dsh-credentials-local'
 import type { AccountClientMetadata } from '@deepseek-ai/dsh-deepseek-account'
+import apply from '../src/index.ts'
 import { MoldexAccount } from '../src/service.ts'
 
 /** Client identity supplied with each account operation. */
@@ -26,7 +27,11 @@ export interface TenantBehavior {
 }
 
 /** Boot one Moldex account against a loopback tenant API; the caller drives replies per path. */
-export async function fixture(home?: string, beforeAccount?: (ctx: Context, origin: string) => Promise<void>): Promise<{
+export async function fixture(
+  home?: string,
+  beforeAccount?: (ctx: Context, origin: string) => Promise<void>,
+  mount: 'account' | 'apply' = 'account',
+): Promise<{
   ctx: Context
   account: MoldexAccount
   origin: string
@@ -35,7 +40,16 @@ export async function fixture(home?: string, beforeAccount?: (ctx: Context, orig
   dispose: () => Promise<void>
 }> {
   const requests: TenantRequest[] = []
-  const behavior: TenantBehavior = { status: 200, responses: {}, holdPaths: [] }
+  const behavior: TenantBehavior = {
+    status: 200,
+    responses: {
+      'POST /api/v1/tenant/api-keys': {
+        success: true,
+        data: { id: 'key-auto', key: 'sk-moldex-new', key_prefix: 'sk-moldex-n', name: 'DSH Desktop' },
+      },
+    },
+    holdPaths: [],
+  }
   const server = createServer((request, response) => {
     void handle(request, response).catch((error: unknown) => response.destroy(error as Error))
   })
@@ -48,11 +62,14 @@ export async function fixture(home?: string, beforeAccount?: (ctx: Context, orig
       body: text.length === 0 ? {} : JSON.parse(text) as Record<string, unknown>,
     })
     const path = (request.url ?? '/').split('?')[0] ?? '/'
+    const method = request.method ?? 'GET'
+    const methodPath = `${method} ${path}`
     if (behavior.holdPaths.includes(path)) {
       behavior.held ??= Promise.withResolvers<string>()
       await behavior.held.promise
     }
-    const payload = behavior.responses[path] ?? { error: { code: 'ROUTE_NOT_FOUND', message: `no fixture for ${path}` } }
+    const payload = behavior.responses[methodPath] ?? behavior.responses[path]
+      ?? { error: { code: 'ROUTE_NOT_FOUND', message: `no fixture for ${methodPath}` } }
     response.statusCode = behavior.status
     response.setHeader('content-type', 'application/json')
     response.end(JSON.stringify(payload))
@@ -63,14 +80,19 @@ export async function fixture(home?: string, beforeAccount?: (ctx: Context, orig
   const origin = `http://127.0.0.1:${address.port}`
   const store = home ?? await mkdtemp(join(tmpdir(), 'dsh-moldex-account-'))
   vi.stubEnv('DSH_HOME', store)
+  delete process.env.MOLDEX_API_KEY
   const ctx = new Context()
   const credentials = ctx.plugin(LocalCredentialProvider, { path: join(store, 'credentials.yaml'), watch: false })
   await credentials
   const authorization = ctx.plugin(AuthorizationService)
   await authorization
   await beforeAccount?.(ctx, origin)
-  const provider = ctx.plugin(MoldexAccount, { accountOrigin: origin, allowLoopbackHttp: true, requestTimeoutMs: 5_000 })
+  const config = { accountOrigin: origin, allowLoopbackHttp: true, requestTimeoutMs: 5_000 }
+  const provider = mount === 'apply'
+    ? ctx.plugin(apply, config)
+    : ctx.plugin(MoldexAccount, config)
   await provider
+  await ctx.fiber.await()
   const account = ctx.deepseekAccount as MoldexAccount
   return {
     ctx, account, origin, requests, behavior,

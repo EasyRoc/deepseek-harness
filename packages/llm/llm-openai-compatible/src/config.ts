@@ -33,6 +33,12 @@ export interface Config {
   streamIdleTimeoutMs: Volatile<number>
   /** Provider-owned model-request retry policy; omission uses normal mode with five retries. */
   retryPolicy: Volatile<RetryPolicyConfig | undefined>
+  /** When false, omit `stream_options.include_usage` for gateways that reject it on some models. */
+  streamUsage: Volatile<boolean>
+  /** When true, refuse inference until `deepseekAccount` reports a stored credential. */
+  requireAccountSession: Volatile<boolean>
+  /** Lowercase substrings; matching wire model ids omit the tools array on chat-completions requests. */
+  toolOmitModelSubstrings: Volatile<string[]>
 }
 
 /** Plain options accepted by the provider resolver. */
@@ -66,6 +72,9 @@ export const openAICompatConfigFields = {
   defaultContextWindow: z.number().step(1).min(1).default(DEFAULT_CONTEXT_WINDOW).volatile(),
   streamIdleTimeoutMs: z.number().min(Number.MIN_VALUE).max(Number.MAX_SAFE_INTEGER).default(DEFAULT_STREAM_IDLE_TIMEOUT_MS).volatile(),
   retryPolicy: RetryPolicySchema.volatile(),
+  streamUsage: z.boolean().default(true).volatile(),
+  requireAccountSession: z.boolean().default(false).volatile(),
+  toolOmitModelSubstrings: z.array(z.string()).default([]).volatile(),
 }
 
 export const Config = z.object(openAICompatConfigFields)
@@ -141,5 +150,22 @@ export function resolveAdapterOptions(
     streamIdleTimeoutMs,
     retryPolicy: resolveRetryPolicy(config.retryPolicy, 'llm-openai-compatible: retryPolicy'),
     apiKeyEnv: credentialRef(config.apiKeyEnv ?? 'OPENAI_COMPATIBLE_API_KEY'),
+    streamUsage: config.streamUsage ?? true,
+    requireAccountSession: config.requireAccountSession ?? false,
+    toolOmitModelSubstrings: resolveToolOmitModelSubstrings(config.toolOmitModelSubstrings ?? []),
   }
+}
+
+/** Normalize configured tool-omit patterns for case-insensitive wire model matching. */
+function resolveToolOmitModelSubstrings(values: readonly string[]): string[] {
+  const seen = new Set<string>()
+  const normalized: string[] = []
+  for (const value of values) {
+    const trimmed = value.trim().toLowerCase()
+    if (trimmed.length === 0) throw new Error('llm-openai-compatible: toolOmitModelSubstrings entries must be non-empty')
+    if (seen.has(trimmed)) continue
+    seen.add(trimmed)
+    normalized.push(trimmed)
+  }
+  return normalized
 }

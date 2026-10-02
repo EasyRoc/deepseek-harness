@@ -145,6 +145,40 @@ describe('OpenAICompatAdapter', () => {
     expect(http.requests).toEqual([])
   })
 
+  it('streams through SSE frames that carry usage null', async () => {
+    const http = await endpoint((response) => {
+      response.setHeader('content-type', 'text/event-stream')
+      response.end(sse([
+        { choices: [{ delta: { content: 'Hi' } }], usage: null },
+        { choices: [{ delta: {}, finish_reason: 'stop' }] },
+        '[DONE]',
+      ]))
+    })
+    const output = await collect(adapter({ baseURL: http.url }).stream(options()))
+    expect(output.filter(chunk => chunk.type === 'text-delta')).toEqual([
+      { type: 'text-delta', index: 0, text: 'Hi' },
+    ])
+    expect(output.at(-1)).toMatchObject({ type: 'finish', reason: { kind: 'stop' } })
+  })
+
+  it('accepts a JSON chat-completions body when the provider omits SSE', async () => {
+    const http = await endpoint((response) => {
+      response.setHeader('content-type', 'application/json')
+      response.end(JSON.stringify({
+        choices: [{ message: { role: 'assistant', content: 'Hi' }, finish_reason: 'stop' }],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }))
+    })
+    const output = await collect(adapter({ baseURL: http.url }).stream(options()))
+    expect(output).toEqual([
+      { type: 'block-start', index: 0, blockType: 'text' },
+      { type: 'text-delta', index: 0, text: 'Hi' },
+      { type: 'block-end', index: 0, block: { type: 'text', text: 'Hi' } },
+      { type: 'usage', usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 } },
+      { type: 'finish', reason: { kind: 'stop' } },
+    ])
+  })
+
   it('classifies a transport failure', async () => {
     vi.stubGlobal('fetch', async () => { throw new TypeError('network down') })
     await expect(collect(adapter().stream(options()))).rejects.toMatchObject({ code: 'TRANSPORT' })

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, vi } from 'vitest'
 import { ok } from '@deepseek-ai/dsh-remote-mock'
 import { createClientTest, webApp, type TestClient } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/index.ts'
 import type { AccountView } from '@deepseek-ai/dsh-deepseek-account/types'
+import { MoldexBrandMark, MoldexBrandName } from '../src/client/Brand.tsx'
 import { MoldexSignIn, type MoldexSignInInjected } from '../src/client/MoldexSignIn.tsx'
 
 const it = createClientTest({
@@ -58,6 +59,13 @@ it('stays inert without an explicit mount', async ({ start, mock }) => {
   expect(mock.log.calls().filter(call => call.endpoint.startsWith('moldexAccount/'))).toEqual([])
 }, 60_000)
 
+it('registers Moldex sidebar brand slots', async ({ start }) => {
+  const c = await start()
+  await c.flush()
+  expect(c.ctx.slots.entries('sidebar.brand.mark').some(entry => entry.component === MoldexBrandMark)).toBe(true)
+  expect(c.ctx.slots.entries('sidebar.brand.name').some(entry => entry.component === MoldexBrandName)).toBe(true)
+}, 60_000)
+
 it('registers the shadowing form under the desktop guard', async ({ start }) => {
   vi.stubGlobal('dshDesktop', {})
   const c = await start()
@@ -109,7 +117,7 @@ it('publishes the sign-in failure message when start is rejected', async ({ star
   expect(injectedOf(c).error).toContain('sign-in rejected')
 }, 60_000)
 
-it.skip('submits credentials through the moldexAccount gateway', async ({ start }) => {
+it('submits credentials through the moldexAccount gateway', async ({ start }) => {
   vi.stubGlobal('dshDesktop', {})
   const c = await start()
   await c.mock.streams.opened('account/watch', 1)
@@ -123,7 +131,7 @@ it.skip('submits credentials through the moldexAccount gateway', async ({ start 
   expect(injectedOf(c).submitting).toBe(false)
 }, 60_000)
 
-it.skip('surfaces a submission rejection through the injected error', async ({ start }) => {
+it('surfaces a submission rejection through the injected error', async ({ start }) => {
   vi.stubGlobal('dshDesktop', {})
   const c = await start()
   await c.mock.streams.opened('account/watch', 1)
